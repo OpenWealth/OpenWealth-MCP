@@ -39,7 +39,47 @@ In the GitHub repo → Settings → Environments:
 
 The environment names must match those configured on PyPI/TestPyPI above.
 
+---
+
 ## Recurring release process
+
+The workflow supports two release paths:
+
+### Path 1 — Automated via GitHub Actions UI (recommended)
+
+Trigger the workflow manually from **GitHub → Actions → "Publish to PyPI" →
+"Run workflow"** and choose:
+
+| Input | Description |
+|-------|-------------|
+| `bump` | `patch` (default), `minor`, or `major` — computed from the current `__version__` |
+| `version` | Optional exact version (e.g. `1.0.0`). When set, overrides `bump`. |
+
+The workflow will:
+1. Bump `__version__` in `src/openwealth_mcp/__init__.py`
+2. Promote `[Unreleased]` in `CHANGELOG.md` to the new version with today's date
+3. Commit the changes as `chore: release vX.Y.Z`
+4. Create and push the `vX.Y.Z` tag
+5. Build wheel + sdist, validate with `twine check`
+6. Publish to TestPyPI, then to PyPI
+
+Or trigger it from the CLI:
+
+```bash
+# Patch bump (0.3.0 → 0.3.1)
+gh workflow run publish.yml --field bump=patch
+
+# Minor bump (0.3.0 → 0.4.0)
+gh workflow run publish.yml --field bump=minor
+
+# Exact version override
+gh workflow run publish.yml --field version=1.0.0
+```
+
+### Path 2 — Manual tag push
+
+Use this when you want full control over the commit history (e.g. you already
+updated the CHANGELOG manually):
 
 ```
 1. Bump __version__ in src/openwealth_mcp/__init__.py (e.g. "0.3.0" → "0.4.0")
@@ -49,15 +89,12 @@ The environment names must match those configured on PyPI/TestPyPI above.
 5. Push:   git push && git push --tags
 ```
 
-The `publish.yml` workflow fires automatically on the `v*` tag:
-
-1. Checks that the tag matches the installed package version (skipped on manual dispatch)
-2. Builds wheel + sdist with `uv build`
-3. Validates with `twine check dist/*`
-4. Publishes to **TestPyPI** first (environment `testpypi`)
-5. Then publishes to **PyPI** (environment `pypi`)
+The `publish.yml` workflow fires automatically on the `v*` tag and skips the
+bump job, going straight to build → TestPyPI → PyPI.
 
 Watch progress in the repo → Actions → "Publish to PyPI".
+
+---
 
 ## Verify after release
 
@@ -73,6 +110,8 @@ openwealth-trading-mcp --check
 
 Check https://pypi.org/project/openwealth-mcp/ for the public page.
 
+---
+
 ## Emergency manual publish
 
 If CI is broken and a hotfix must ship:
@@ -86,6 +125,25 @@ uv run --with twine twine upload dist/*
 
 Never commit the API token. Generate a short-lived project-scoped token from
 PyPI account settings and delete it after use.
+
+---
+
+## Workflow permissions note
+
+The `bump-and-tag` job commits and pushes directly to the default branch.
+It requires **"Read and write permissions"** for `GITHUB_TOKEN`, which is the
+default on most repositories.
+
+If your repository has restricted token permissions (Settings → Actions →
+General → Workflow permissions → "Read repository contents and packages
+permissions"), either:
+
+- Change it to **"Read and write permissions"**, or
+- Create a PAT with `contents: write` scope, store it as a secret (e.g.
+  `RELEASE_TOKEN`), and replace `secrets.GITHUB_TOKEN` with
+  `secrets.RELEASE_TOKEN` in the `bump-and-tag` checkout step.
+
+---
 
 ## Related
 
