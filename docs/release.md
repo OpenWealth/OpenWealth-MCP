@@ -56,12 +56,22 @@ Trigger the workflow manually from **GitHub → Actions → "Publish to PyPI" �
 | `version` | Optional exact version (e.g. `1.0.0`). When set, overrides `bump`. |
 
 The workflow will:
-1. Bump `__version__` in `src/openwealth_mcp/__init__.py`
-2. Promote `[Unreleased]` in `CHANGELOG.md` to the new version with today's date
-3. Commit the changes as `chore: release vX.Y.Z`
-4. Create and push the `vX.Y.Z` tag
-5. Build wheel + sdist, validate with `twine check`
-6. Publish to TestPyPI, then to PyPI
+1. Create a `release/vX.Y.Z` branch from `main`
+2. Bump `__version__` in `src/openwealth_mcp/__init__.py`
+3. Promote `[Unreleased]` in `CHANGELOG.md` to the new version with today's date
+4. Commit the changes as `chore: release vX.Y.Z` on the release branch
+5. Push the `vX.Y.Z` tag (this triggers the build + publish path automatically)
+6. Open a PR `release/vX.Y.Z` → `main` for review and merge
+
+Then, triggered by the tag push:
+
+7. Build wheel + sdist, validate with `twine check`
+8. Publish to TestPyPI, then to PyPI
+
+Merge the auto-opened PR once the publish run succeeds.
+
+> **Note:** the workflow never pushes directly to `main` — it always goes
+> through a PR, respecting branch protection rules.
 
 Or trigger it from the CLI:
 
@@ -130,18 +140,20 @@ PyPI account settings and delete it after use.
 
 ## Workflow permissions note
 
-The `bump-and-tag` job commits and pushes directly to the default branch.
-It requires **"Read and write permissions"** for `GITHUB_TOKEN`, which is the
-default on most repositories.
+The `bump-and-tag` job pushes a `release/vX.Y.Z` branch and a tag, and opens
+a PR — it never pushes directly to `main`. This is compatible with protected
+branch rules that require pull requests.
 
-If your repository has restricted token permissions (Settings → Actions →
-General → Workflow permissions → "Read repository contents and packages
-permissions"), either:
+It requires **"Read and write permissions"** for `GITHUB_TOKEN` (Settings →
+Actions → General → Workflow permissions). This is the default on most
+repositories.
+
+If your repository uses restricted token permissions, either:
 
 - Change it to **"Read and write permissions"**, or
-- Create a PAT with `contents: write` scope, store it as a secret (e.g.
-  `RELEASE_TOKEN`), and replace `secrets.GITHUB_TOKEN` with
-  `secrets.RELEASE_TOKEN` in the `bump-and-tag` checkout step.
+- Create a PAT with `contents: write` and `pull-requests: write` scopes, store
+  it as a secret (e.g. `RELEASE_TOKEN`), and replace `secrets.GITHUB_TOKEN`
+  with `secrets.RELEASE_TOKEN` in the `bump-and-tag` checkout step.
 
 ---
 

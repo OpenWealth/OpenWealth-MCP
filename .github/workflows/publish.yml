@@ -1,8 +1,18 @@
 name: Publish to PyPI
 
-# Triggered either by:
-#   1. A manual workflow_dispatch (bumps version, commits, tags, then publishes)
-#   2. A direct "v*" tag push (skips the bump job, builds & publishes as-is)
+# Two independent trigger paths:
+#
+#   workflow_dispatch  →  bump-and-tag job only
+#                         Creates a release/vX.Y.Z branch, bumps __version__ +
+#                         CHANGELOG, pushes a vX.Y.Z tag, and opens a PR to main.
+#                         The tag push then fires the second path automatically.
+#
+#   push: tags v*      →  build → publish-testpypi → publish-pypi
+#                         Builds the wheel/sdist and publishes to PyPI.
+#                         Works for both automated releases and manual tag pushes.
+#
+# This split avoids pushing directly to the protected main branch and prevents
+# double-publishing (build does NOT run on workflow_dispatch).
 on:
   workflow_dispatch:
     inputs:
@@ -24,7 +34,7 @@ permissions:
   contents: read
 
 jobs:
-  # ── Job 1: bump version, commit & push tag ─────────────────────────────────
+  # ── Job 1: bump version on a release branch, push tag, open PR ─────────────
   # Runs ONLY on workflow_dispatch; skipped on direct tag push.
   bump-and-tag:
     name: Bump version & create tag
@@ -32,15 +42,11 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    outputs:
-      new_version: ${{ steps.bump.outputs.new_version }}
+      pull-requests: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           fetch-depth: 0
-          # Use a PAT or the default GITHUB_TOKEN; the latter works when
-          # "Allow GitHub Actions to create pull requests" is enabled in
-          # Settings → Actions → General → Workflow permissions.
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install uv
@@ -51,13 +57,13 @@ jobs:
       - name: Set up Python
         run: uv python install 3.13
 
-      - name: Install package (editable) to read current version
+      - name: Install package to read current version
         run: uv sync --frozen
 
-      - name: Compute & write new version
+      - name: Compute new version
         id: bump
         run: |
-          # Read current version (strips pre-release suffixes like "0.3.0b1")
+          # Read current version and strip pre-release suffixes (e.g. "0.3.0b1" → "0.3.0")
           CURRENT=$(uv run python -c "import importlib.metadata; print(importlib.metadata.version('openwealth-mcp'))")
           BASE=$(echo "$CURRENT" | grep -oP '^\d+\.\d+\.\d+')
           MAJOR=$(echo "$BASE" | cut -d. -f1)
@@ -78,67 +84,81 @@ jobs:
           fi
 
           echo "Bumping ${CURRENT} → ${NEW_VER}"
+          echo "new_version=${NEW_VER}" >> "$GITHUB_OUTPUT"
 
-          # Write new version to the single source of truth
+      - name: Create release branch and bump files
+        id: release-branch
+        run: |
+          NEW_VER="${{ steps.bump.outputs.new_version }}"
+          BRANCH="release/v${NEW_VER}"
+          echo "branch=${BRANCH}" >> "$GITHUB_OUTPUT"
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+
+          # Bump __version__ (single source of truth)
           sed -i "s/__version__ = \".*\"/__version__ = \"${NEW_VER}\"/" \
               src/openwealth_mcp/__init__.py
 
-          echo "new_version=${NEW_VER}" >> "$GITHUB_OUTPUT"
-
-      - name: Update CHANGELOG (promote [Unreleased] → [x.y.z])
-        run: |
-          NEW_VER="${{ steps.bump.outputs.new_version }}"
+          # Promote [Unreleased] → [x.y.z] in CHANGELOG
           TODAY=$(date +%Y-%m-%d)
-
-          # Replace the [Unreleased] header with the versioned one
           sed -i "s/## \[Unreleased\]/## [${NEW_VER}] — ${TODAY}/" CHANGELOG.md
 
-          # Insert a fresh [Unreleased] section at the top (after the preamble)
-          # Find the line number of the newly renamed release header and insert before it
-          LINE=$(grep -n "## \[${NEW_VER}\]" CHANGELOG.md | head -1 | cut -d: -f1)
+          # Insert a fresh [Unreleased] section above the new release header
+          LINE=$(grep -n "## \[${NEW_VER}\]" CHANGELOG.md | cut -d: -f1)
           sed -i "${LINE}i ## [Unreleased]\n\n---\n" CHANGELOG.md
 
-          # Update the [Unreleased] diff link at the bottom
+          # Update [Unreleased] diff link at the bottom
           PREV_TAG=$(git describe --tags --abbrev=0 HEAD 2>/dev/null || echo "")
-          if [ -n "$PREV_TAG" ]; then
-            REPO_URL=$(git remote get-url origin | sed 's/\.git$//')
-            # Replace existing [Unreleased] link or append if missing
-            if grep -q "^\[Unreleased\]:" CHANGELOG.md; then
-              sed -i "s|^\[Unreleased\]:.*|\[Unreleased\]: ${REPO_URL}/compare/v${NEW_VER}...HEAD|" CHANGELOG.md
-              # Add the new version's compare link after the [Unreleased] line
-              sed -i "/^\[Unreleased\]:/a [${NEW_VER}]: ${REPO_URL}/compare/${PREV_TAG}...v${NEW_VER}" CHANGELOG.md
-            fi
+          REPO_URL=$(git remote get-url origin | sed 's/\.git$//')
+          if [ -n "$PREV_TAG" ] && grep -q "^\[Unreleased\]:" CHANGELOG.md; then
+            sed -i "s|^\[Unreleased\]:.*|\[Unreleased\]: ${REPO_URL}/compare/v${NEW_VER}...HEAD|" CHANGELOG.md
+            sed -i "/^\[Unreleased\]:/a [${NEW_VER}]: ${REPO_URL}/compare/${PREV_TAG}...v${NEW_VER}" CHANGELOG.md
           fi
 
-      - name: Commit, tag & push
-        run: |
-          NEW_VER="${{ steps.bump.outputs.new_version }}"
-          git config user.name  "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add src/openwealth_mcp/__init__.py CHANGELOG.md
           git commit -m "chore: release v${NEW_VER}"
+
+      - name: Push release branch and tag
+        run: |
+          NEW_VER="${{ steps.bump.outputs.new_version }}"
+          BRANCH="${{ steps.release-branch.outputs.branch }}"
+          git push origin "$BRANCH"
           git tag "v${NEW_VER}"
-          git push origin HEAD --tags
+          # This tag push will trigger the push:tags:v* path → build + publish
+          git push origin "v${NEW_VER}"
+
+      - name: Open PR to merge release branch into main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          NEW_VER="${{ steps.bump.outputs.new_version }}"
+          BRANCH="${{ steps.release-branch.outputs.branch }}"
+          gh pr create \
+            --title "chore: release v${NEW_VER}" \
+            --body "Automated release bump for **v${NEW_VER}**.
+
+          Changes:
+          - \`src/openwealth_mcp/__init__.py\`: version bumped to \`${NEW_VER}\`
+          - \`CHANGELOG.md\`: \`[Unreleased]\` promoted to \`[${NEW_VER}]\`
+
+          The publish workflow was already triggered by the \`v${NEW_VER}\` tag push.
+          Merge this PR once the publish run succeeds." \
+            --base main \
+            --head "$BRANCH"
 
   # ── Job 2: build wheel + sdist ─────────────────────────────────────────────
+  # Runs ONLY on tag push (v*); never on workflow_dispatch.
   build:
     name: Build distribution
-    needs: [bump-and-tag]
-    # Run after a successful bump, OR directly on a tag push (bump is skipped).
-    if: |
-      always() &&
-      (github.event_name == 'push' ||
-       needs.bump-and-tag.result == 'success')
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-        with:
-          # On workflow_dispatch the bump job already pushed the tag; check out
-          # the latest commit (which carries the new __version__).
-          ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/v{0}', needs.bump-and-tag.outputs.new_version) || github.ref }}
 
       - name: Install uv
-        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d  # v10.0.1
+        uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e  # v6
         with:
           enable-cache: true
 
@@ -146,7 +166,6 @@ jobs:
         run: uv python install 3.13
 
       - name: Verify tag matches package version
-        if: startsWith(github.ref, 'refs/tags/')
         run: |
           TAG="${GITHUB_REF_NAME}"
           PKG_VERSION="v$(uv run python -c "import importlib.metadata; print(importlib.metadata.version('openwealth-mcp'))")"
