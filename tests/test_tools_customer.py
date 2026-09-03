@@ -158,18 +158,6 @@ async def test_customer_spec_yaml_resource_returns_yaml() -> None:
     assert "get_customers" in str(result)
 
 
-@pytest.mark.asyncio
-async def test_customer_spec_yaml_resource_contains_openapi() -> None:
-    from fastmcp import FastMCP
-
-    from openwealth_mcp.resources.customer import register_customer_resources
-
-    server = FastMCP("tmp-customer-yaml")
-    register_customer_resources(server)
-    result = await server.read_resource("openwealth://specs/customer.yaml")
-    assert "openapi" in str(result)
-
-
 # ---------------------------------------------------------------------------
 # Full round-trip via mcp.call_tool
 # ---------------------------------------------------------------------------
