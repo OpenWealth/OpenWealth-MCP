@@ -32,10 +32,10 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/synpulse-openwealth/openwealth-mcp"
-Repository = "https://github.com/synpulse-openwealth/openwealth-mcp"
-Issues = "https://github.com/synpulse-openwealth/openwealth-mcp/issues"
-Changelog = "https://github.com/synpulse-openwealth/openwealth-mcp/blob/master/CHANGELOG.md"
+Homepage = "https://github.com/OpenWealth/OpenWealth-MCP"
+Repository = "https://github.com/OpenWealth/OpenWealth-MCP"
+Issues = "https://github.com/OpenWealth/OpenWealth-MCP/issues"
+Changelog = "https://github.com/OpenWealth/OpenWealth-MCP/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 dev = [
