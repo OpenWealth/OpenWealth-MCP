@@ -158,3 +158,39 @@ async def test_trading_spec_yaml_resource() -> None:
     result = await server.read_resource("openwealth://specs/trading.yaml")
     text = str(result)
     assert "openapi" in text.lower() or "not found" in text.lower()
+
+
+@pytest.mark.asyncio
+async def test_customer_resources_registered() -> None:
+    """Customer Management server exposes both customer spec resources."""
+    from openwealth_mcp.customer.server import mcp as customer_mcp
+
+    resources = await customer_mcp.list_resources()
+    uris = {str(r.uri) for r in resources}
+    assert "openwealth://specs/customer" in uris
+    assert "openwealth://specs/customer.yaml" in uris
+
+
+@pytest.mark.asyncio
+async def test_customer_spec_summary_resource() -> None:
+    from fastmcp import FastMCP
+
+    from openwealth_mcp.resources.customer import register_customer_resources
+
+    server = FastMCP("tmp")
+    register_customer_resources(server)
+    result = await server.read_resource("openwealth://specs/customer")
+    assert "create_customer" in str(result)
+
+
+@pytest.mark.asyncio
+async def test_customer_spec_yaml_resource() -> None:
+    from fastmcp import FastMCP
+
+    from openwealth_mcp.resources.customer import register_customer_resources
+
+    server = FastMCP("tmp")
+    register_customer_resources(server)
+    result = await server.read_resource("openwealth://specs/customer.yaml")
+    text = str(result)
+    assert "openapi" in text.lower() or "not found" in text.lower()

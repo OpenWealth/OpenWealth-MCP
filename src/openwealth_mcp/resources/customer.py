@@ -10,7 +10,6 @@ _SPEC_SUMMARY = """\
 # OpenWealth Customer Management API v2.0.6
 
 Docs: https://sandbox.openwealth.synpulse8.com/docs?api=customer-management-2-0-6
-Spec: specs/customerAPI.yaml (vendored)
 
 ## IMPORTANT: Write operations
 
