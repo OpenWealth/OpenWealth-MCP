@@ -5,10 +5,10 @@ import json
 import httpx
 import pytest
 
-from openwealth_mcp.app import set_client
 from openwealth_mcp.client import OpenWealthHttpClient
 from openwealth_mcp.config import Settings
-from openwealth_mcp.server import mcp
+from openwealth_mcp.custody.app import set_custody_client as set_client
+from openwealth_mcp.custody.server import mcp
 
 _CUSTODY_URL = "https://api.example.com/api/custody-services/v3"
 

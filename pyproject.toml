@@ -50,7 +50,7 @@ dev = [
 ]
 
 [project.scripts]
-openwealth-custody-mcp   = "openwealth_mcp.server:main"
+openwealth-custody-mcp   = "openwealth_mcp.custody.server:main"
 openwealth-trading-mcp   = "openwealth_mcp.trading.server:main"
 openwealth-customer-mcp  = "openwealth_mcp.customer.server:main"
 

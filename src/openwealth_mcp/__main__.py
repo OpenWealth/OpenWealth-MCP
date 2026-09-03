@@ -1,4 +1,4 @@
-from openwealth_mcp.server import main
+from openwealth_mcp.custody.server import main
 
 if __name__ == "__main__":
     main()

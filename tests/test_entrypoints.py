@@ -20,9 +20,9 @@ def test_custody_main_check_flag(capsys: pytest.CaptureFixture[str]) -> None:
     """``--check`` should print an OK line and return without starting the server."""
     with (
         patch.object(sys, "argv", ["openwealth-custody-mcp", "--check"]),
-        patch("openwealth_mcp.server.create_mcp") as mock_create,
+        patch("openwealth_mcp.custody.server.create_custody_mcp") as mock_create,
     ):
-        from openwealth_mcp.server import main
+        from openwealth_mcp.custody.server import main
 
         main()
 
@@ -36,11 +36,11 @@ def test_custody_main_runs_server() -> None:
     mock_server = MagicMock()
     with (
         patch.object(sys, "argv", ["openwealth-custody-mcp"]),
-        patch("openwealth_mcp.server.create_mcp", return_value=mock_server),
-        patch("openwealth_mcp.server.get_app") as mock_get_app,
+        patch("openwealth_mcp.custody.server.create_custody_mcp", return_value=mock_server),
+        patch("openwealth_mcp.custody.server.get_custody_app") as mock_get_app,
     ):
         mock_get_app.return_value.client = MagicMock()
-        from openwealth_mcp.server import main
+        from openwealth_mcp.custody.server import main
 
         main()
 
@@ -57,7 +57,7 @@ def test_custody_main_missing_url_exits(monkeypatch: pytest.MonkeyPatch) -> None
         patch.object(sys, "argv", ["openwealth-custody-mcp"]),
         pytest.raises(SystemExit),
     ):
-        from openwealth_mcp.server import main
+        from openwealth_mcp.custody.server import main
 
         main()
     get_settings.cache_clear()
