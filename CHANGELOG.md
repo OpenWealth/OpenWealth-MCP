@@ -11,6 +11,22 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **`openwealth-customer-mcp`** — new MCP server for the OpenWealth Customer
+  Management API v2.0.6 with **26 tools** covering the full customer onboarding
+  and lifecycle: customers, persons, contacts, addresses, documents, KYC, and
+  prospect pre-checks (GET + POST + PUT + DELETE).
+- **`OPENWEALTH_CUSTOMER_MANAGEMENT_BASE_URL`** — new env variable for the
+  Customer Management server base URL.
+- **`specs/customerAPI.yaml`** — vendored OpenAPI YAML for Customer Management
+  v2.0.6, served as `openwealth://specs/customer` and
+  `openwealth://specs/customer.yaml` MCP resources.
+
+---
+
+## [0.3.0] — 2026-09-02
+
+### Added
+
 - **`OPENWEALTH_CUSTODY_BASE_URL`** and **`OPENWEALTH_TRADING_BASE_URL`** — each
   MCP server now has its own base URL variable. A single `.env` file can hold
   both. The URL for each server is resolved at startup via
@@ -25,6 +41,15 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   and MCP client configuration (`claude_desktop_config.json`, `.cursor/mcp.json`).
 - `OpenWealthHttpClient` now requires an explicit `base_url` keyword argument
   (previously read from `settings.base_url`).
+
+### Removed
+
+- **LLM wiki layer** (`wiki/`, `raw/`, `AGENTS.md`, `.cursor/rules/llm-wiki.mdc`)
+  replaced by three plain Markdown pages under `docs/` (`mcp-clients.md`,
+  `local-dev.md`, `release.md`). The wiki was an agent-maintained knowledge base
+  that added 30 files to the repo with no value for package consumers.
+- **Stale Docker runbook** (`wiki/runbooks/docker-cursor-mcp.md`) which documented
+  a `Dockerfile` removed in v0.2.0 and the old package name `openwealth_ai_mcp`.
 
 ---
 
@@ -113,6 +138,7 @@ Initial release of the Custody MCP server.
 - Pydantic-validated settings; structured JSON error envelopes.
 - Vendored OpenAPI spec served as MCP resource.
 
-[Unreleased]: https://github.com/synpulse-openwealth/openwealth-mcp/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/synpulse-openwealth/openwealth-mcp/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/synpulse-openwealth/openwealth-mcp/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/synpulse-openwealth/openwealth-mcp/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/synpulse-openwealth/openwealth-mcp/releases/tag/v0.1.0

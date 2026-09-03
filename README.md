@@ -14,6 +14,7 @@ through a typed, audited interface instead of raw HTTP.
 |--------|-----|----------------|-------|
 | **Custody** | [Custody Services v3.2.0](https://sandbox.openwealth.synpulse8.com/docs?api=custody-services-3-2-0) — customers, accounts, positions, transactions | `openwealth-custody-mcp` | 10 (read-only) |
 | **Trading** | [Order Placement v3.0.1](https://sandbox.openwealth.synpulse8.com/docs?api=order-placement-3-0-1) — orders, executions, quotes, subscriptions | `openwealth-trading-mcp` | 18 (full lifecycle) |
+| **Customer** | [Customer Management v2.0.6](https://sandbox.openwealth.synpulse8.com/docs?api=customer-management-2-0-6) — customers, persons, contacts, addresses, documents, KYC | `openwealth-customer-mcp` | 26 (full lifecycle) |
 
 Both ship in one Python package and speak **MCP over stdio**. OpenAPI specs are
 vendored from [SFTI ca-wealth](https://github.com/swissfintechinnovations/ca-wealth)
@@ -31,20 +32,20 @@ and served as MCP resources.
 MCP client (Claude / Cursor / …)
     │ stdio (JSON-RPC)
     ▼
-openwealth-custody-mcp          openwealth-trading-mcp
-    │                                   │
-    ▼                                   ▼
- tools/                              tools/
-    │                                   │
-    ▼                                   ▼
- CustodyService                      TradingService
-    │                                   │
-    └──────────────┬────────────────────┘
-                   ▼
-        OpenWealthHttpClient
-                   │ HTTPS
-                   ▼
-         OpenWealth API endpoints
+openwealth-custody-mcp   openwealth-trading-mcp   openwealth-customer-mcp
+    │                            │                          │
+    ▼                            ▼                          ▼
+ tools/                       tools/                     tools/
+    │                            │                          │
+    ▼                            ▼                          ▼
+ CustodyService             TradingService           CustomerService
+    │                            │                          │
+    └────────────────┬───────────┴──────────────────────────┘
+                     ▼
+          OpenWealthHttpClient
+                     │ HTTPS
+                     ▼
+           OpenWealth API endpoints
 ```
 
 ---
@@ -88,6 +89,13 @@ Configure **each server separately** — each needs its own base URL and token.
       "command": "openwealth-trading-mcp",
       "env": {
         "OPENWEALTH_TRADING_BASE_URL": "https://<host>/api/trading-services/v1",
+        "OPENWEALTH_BEARER_TOKEN": "<jwt>"
+      }
+    },
+    "openwealth-customer": {
+      "command": "openwealth-customer-mcp",
+      "env": {
+        "OPENWEALTH_CUSTOMER_MANAGEMENT_BASE_URL": "https://api.openwealth.synpulse8.com/api/customer-management/v2",
         "OPENWEALTH_BEARER_TOKEN": "<jwt>"
       }
     }
@@ -135,6 +143,7 @@ one). Host and credentials are never hard-coded.
 |----------|---------|-------------|
 | `OPENWEALTH_CUSTODY_BASE_URL` | — | Custody API base URL including the path prefix, no trailing slash. Required when running the Custody server. `https://` is added if the scheme is missing. |
 | `OPENWEALTH_TRADING_BASE_URL` | — | Trading API base URL including the path prefix, no trailing slash. Required when running the Trading server. |
+| `OPENWEALTH_CUSTOMER_MANAGEMENT_BASE_URL` | — | Customer Management API base URL including the path prefix, no trailing slash. Required when running the Customer Management server. |
 | `OPENWEALTH_BEARER_TOKEN` | — | Access token **without** the `Bearer ` prefix. Required unless `OPENWEALTH_AUTH_HEADER` is set. |
 | `OPENWEALTH_AUTH_HEADER` | — | Full `Authorization` header value; overrides `OPENWEALTH_BEARER_TOKEN`. |
 | `OPENWEALTH_CORRELATION_ID` | generated | Fixed correlation id; otherwise a UUID per request. |
@@ -205,6 +214,37 @@ OpenAPI spec makes it mandatory.
 | `delete_event_subscription` | `deleteEventSubscription` | `DELETE /event-subscriptions/{eventSubscriptionId}` |
 | `list_event_subscription_notifications` | `listEventSubscriptionEventNotifications` | `GET /event-subscriptions/{eventSubscriptionId}/event-notifications` |
 
+### Customer Management — `openwealth-customer-mcp`
+
+| Tool | operationId | Endpoint |
+|------|-------------|----------|
+| `get_customers` | `getCustomers` | `GET /customers` |
+| **`create_customer`** ⚠️ | `postCustomer` | `POST /customer-details` |
+| `get_customer` | `getCustomerByCustomerId` | `GET /customers/{customerId}` |
+| `get_customer_details` | `getCustomerDetailsByCustomerId` | `GET /customers/{customerId}/customer-details` |
+| `get_persons` | `getPersons` | `GET /customers/{customerId}/persons` |
+| **`create_person`** ⚠️ | `postPerson` | `POST /customers/{customerId}/person-details` |
+| `get_person` | `getPersonByPersonId` | `GET /customers/{customerId}/persons/{personId}` |
+| `get_person_details` | `getPersonDetailsByPersonId` | `GET /customers/{customerId}/person-details/{personId}` |
+| `get_contacts` | `getContactDetailsByCustomerId` | `GET /customers/{customerId}/persons/{personId}/contacts` |
+| `create_contact` | `postContactDetailsByCustomerId` | `POST /customers/{customerId}/persons/{personId}/contacts` |
+| `get_contact` | `getContactDetailsByContactDetailID` | `GET /customers/{customerId}/persons/{personId}/contacts/{contactId}` |
+| `update_contact` | `putContactDetailByContactDetailId` | `PUT /customers/{customerId}/persons/{personId}/contacts/{contactId}` |
+| `delete_contact` | `deleteContactDetailsByContactDetailID` | `DELETE /customers/{customerId}/persons/{personId}/contacts/{contactId}` |
+| `get_addresses` | `getAddressByCustomerId` | `GET /customers/{customerId}/persons/{personId}/addresses` |
+| `create_address` | `postAddressByCustomerId` | `POST /customers/{customerId}/persons/{personId}/addresses` |
+| `get_address` | `getAddressByAddressId` | `GET /customers/{customerId}/persons/{personId}/addresses/{addressId}` |
+| `update_address` | `putAddressByCustomerId` | `PUT /customers/{customerId}/persons/{personId}/addresses/{addressId}` |
+| `get_documents` | `getDocumentsByCustomerId` | `GET /customers/{customerId}/documents` |
+| **`create_document`** ⚠️ | `postDocumentByCustomerId` | `POST /customers/{customerId}/document-details` |
+| `get_document` | `getDocumentByDocumentId` | `GET /customers/{customerId}/documents/{documentId}` |
+| `get_document_details` | `getDocumentDetailsByDocumentId` | `GET /customers/{customerId}/documents/{documentId}/document-details` |
+| `get_kyc` | `getKycByCustomerId` | `GET /customers/{customerId}/persons/{personId}/kyc` |
+| **`create_kyc`** ⚠️ | `postKyc` | `POST /customers/{customerId}/persons/{personId}/kyc` |
+| `create_prospect_precheck` | `postProspect` | `POST /prospect-precheck` |
+| `get_prospect_precheck` | `getPreCheck` | `GET /prospect-precheck/{temporaryId}` |
+| `get_status` | `getStatusByTemporaryId` | `GET /status/{temporaryId}` |
+
 ### MCP resources
 
 | URI | Content |
@@ -213,6 +253,8 @@ OpenAPI spec makes it mandatory.
 | `openwealth://specs/custody.yaml` | Vendored Custody OpenAPI YAML |
 | `openwealth://specs/trading` | Trading tool/endpoint table with financial-impact notes |
 | `openwealth://specs/trading.yaml` | Vendored Trading OpenAPI YAML |
+| `openwealth://specs/customer` | Customer Management tool/endpoint table with write-impact notes |
+| `openwealth://specs/customer.yaml` | Vendored Customer Management OpenAPI YAML |
 
 ---
 
@@ -220,14 +262,19 @@ OpenAPI spec makes it mandatory.
 
 - **`create_order` is never retried.** A duplicate order is a financial error,
   so a failed POST fails loudly rather than silently placing a second one.
+- **Customer Management write tools are never retried.** `create_customer`,
+  `create_person`, `create_contact`, `create_address`, `create_document`,
+  `create_kyc` and `create_prospect_precheck` are not retried to avoid
+  duplicate records at the custody bank.
 - **Idempotent writes are retried** on 5xx: `cancel_order`, `create_quote`,
-  `PUT` and `DELETE`. GETs retry on 408, 429 and 5xx with exponential backoff
-  and ±20% jitter. The `Retry-After` header is honoured.
+  `update_contact`, `update_address`, `PUT` and `DELETE`. GETs retry on
+  408, 429 and 5xx with exponential backoff and ±20% jitter.
+  The `Retry-After` header is honoured.
 - **Tool annotations** (`readOnlyHint`, `destructiveHint`, `idempotentHint`) are
   set per tool, so MCP clients can require confirmation for writes.
 - **Tokens are never tool arguments.** They come from the environment only, and
   are never echoed in tool results or logs.
-- **Custody is read-only** by design. Only the Trading server can mutate state.
+- **Custody is read-only** by design. Only the Trading and Customer servers can mutate state.
 
 Always confirm order details with a human before calling `create_order`.
 
@@ -268,8 +315,9 @@ See [`CONTRIBUTING.md`](CONTRIBUTING.md) for full contribution guidelines.
 ## Scope
 
 Custody is read-only (GET). Trading covers the full order lifecycle
-(GET, POST, PUT, DELETE). Customer Management, HTTP transport, JWKS ingress and
-a central MCP gateway are out of scope for v0.2.0 — see
+(GET, POST, PUT, DELETE). Customer Management covers the full customer
+onboarding and lifecycle (GET, POST, PUT, DELETE). HTTP transport, JWKS ingress
+and a central MCP gateway are out of scope — see
 [`wiki/decisions/defer-mcp-gateway.md`](wiki/decisions/defer-mcp-gateway.md) for the reasoning.
 
 ---

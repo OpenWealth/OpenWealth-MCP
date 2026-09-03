@@ -12,7 +12,7 @@ def _openwealth_default_env(monkeypatch: pytest.MonkeyPatch) -> None:
     """Provide minimal Settings so tool tests need not set process env.
 
     OPENWEALTH_BEARER_TOKEN is always required.
-    Both per-service URLs are set so that Custody and Trading tests work
+    Per-service URLs are set so that Custody, Trading and Customer tests work
     without additional env configuration.
     Individual tests may override these via their own monkeypatch.
     """
@@ -23,6 +23,10 @@ def _openwealth_default_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv(
         "OPENWEALTH_TRADING_BASE_URL",
         "https://api.example.com/api/trading-services/v1",
+    )
+    monkeypatch.setenv(
+        "OPENWEALTH_CUSTOMER_MANAGEMENT_BASE_URL",
+        "https://api.example.com/api/customer-management/v2",
     )
     monkeypatch.setenv("OPENWEALTH_BEARER_TOKEN", "test-token")
     get_settings.cache_clear()

@@ -120,6 +120,63 @@ def test_trading_main_runs_server() -> None:
 # ---------------------------------------------------------------------------
 
 
+# ---------------------------------------------------------------------------
+# Customer Management server
+# ---------------------------------------------------------------------------
+
+
+def test_customer_main_check_flag(capsys: pytest.CaptureFixture[str]) -> None:
+    """``--check`` should print an OK line and return without starting the server."""
+    with (
+        patch.object(sys, "argv", ["openwealth-customer-mcp", "--check"]),
+        patch("openwealth_mcp.customer.server.create_customer_mcp") as mock_create,
+    ):
+        from openwealth_mcp.customer.server import main
+
+        main()
+
+    out = capsys.readouterr().out
+    assert out.startswith("OK openwealth-customer")
+    mock_create.assert_not_called()
+
+
+def test_customer_main_missing_url_exits(monkeypatch: pytest.MonkeyPatch) -> None:
+    """main() exits with SystemExit when OPENWEALTH_CUSTOMER_MANAGEMENT_BASE_URL is unset."""
+    from openwealth_mcp.config import get_settings
+
+    monkeypatch.delenv("OPENWEALTH_CUSTOMER_MANAGEMENT_BASE_URL", raising=False)
+    get_settings.cache_clear()
+    with (
+        patch.object(sys, "argv", ["openwealth-customer-mcp"]),
+        pytest.raises(SystemExit),
+    ):
+        from openwealth_mcp.customer.server import main
+
+        main()
+    get_settings.cache_clear()
+
+
+def test_customer_main_runs_server() -> None:
+    """Normal invocation should call ``server.run(transport='stdio')``."""
+    mock_server = MagicMock()
+    with (
+        patch.object(sys, "argv", ["openwealth-customer-mcp"]),
+        patch("openwealth_mcp.customer.server.create_customer_mcp", return_value=mock_server),
+        patch("openwealth_mcp.customer.server.get_customer_app") as mock_get_app,
+    ):
+        mock_get_app.return_value.client = MagicMock()
+        from openwealth_mcp.customer.server import main
+
+        main()
+
+    mock_server.run.assert_called_once_with(transport="stdio", show_banner=False)
+
+
+# ---------------------------------------------------------------------------
+# Retry-After and jitter in client
+# ---------------------------------------------------------------------------
+
+
 def test_backoff_honours_retry_after_seconds() -> None:
     """_backoff_seconds should use the Retry-After header value (in seconds)."""
     from openwealth_mcp.client import _backoff_seconds

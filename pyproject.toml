@@ -1,7 +1,7 @@
 [project]
 name = "openwealth-mcp"
 dynamic = ["version"]
-description = "MCP servers for the OpenWealth Custody and Trading Services APIs"
+description = "MCP servers for the OpenWealth Custody, Trading and Customer Management APIs"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "Apache-2.0"
@@ -9,7 +9,7 @@ license-files = ["LICENSE"]
 authors = [
     { name = "Synpulse8", email = "openwealth@synpulse8.com" },
 ]
-keywords = ["openwealth", "mcp", "fastmcp", "custody", "trading", "fintech", "llm"]
+keywords = ["openwealth", "mcp", "fastmcp", "custody", "trading", "customer-management", "fintech", "llm"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -50,8 +50,9 @@ dev = [
 ]
 
 [project.scripts]
-openwealth-custody-mcp  = "openwealth_mcp.server:main"
-openwealth-trading-mcp  = "openwealth_mcp.trading.server:main"
+openwealth-custody-mcp   = "openwealth_mcp.server:main"
+openwealth-trading-mcp   = "openwealth_mcp.trading.server:main"
+openwealth-customer-mcp  = "openwealth_mcp.customer.server:main"
 
 [build-system]
 requires = ["hatchling"]
@@ -94,8 +95,11 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 
 [tool.ruff.lint.per-file-ignores]
 "src/openwealth_mcp/resources/custody.py"  = ["E501"]
-"src/openwealth_mcp/resources/trading.py"  = ["E501"]
-"src/openwealth_mcp/tools/trading.py"      = ["E501"]
+"src/openwealth_mcp/resources/trading.py"   = ["E501"]
+"src/openwealth_mcp/tools/trading.py"       = ["E501"]
+"src/openwealth_mcp/resources/customer.py"  = ["E501"]
+"src/openwealth_mcp/tools/customer.py"      = ["E501"]
+"src/openwealth_mcp/customer/service.py"    = ["E501"]
 
 [tool.mypy]
 python_version = "3.11"

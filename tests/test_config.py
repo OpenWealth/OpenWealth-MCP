@@ -103,6 +103,40 @@ def test_normalize_base_url_handles_empty_string() -> None:
     assert settings.custody_base_url is None
 
 
+def test_customer_management_url_strips_trailing_slash(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv(
+        "OPENWEALTH_CUSTOMER_MANAGEMENT_BASE_URL",
+        "https://api.example.com/api/customer-management/v2/",
+    )
+    monkeypatch.setenv("OPENWEALTH_BEARER_TOKEN", "tok")
+    settings = Settings(_env_file=None)  # type: ignore[call-arg]
+    assert (
+        settings.customer_management_base_url
+        == "https://api.example.com/api/customer-management/v2"
+    )
+
+
+def test_base_url_for_customer_returns_url() -> None:
+    settings = Settings(  # type: ignore[call-arg]
+        customer_management_base_url="https://customer.example.com/v2",
+        bearer_token="tok",
+        _env_file=None,
+    )
+    assert settings.base_url_for("customer") == "https://customer.example.com/v2"
+
+
+def test_base_url_for_customer_missing_raises() -> None:
+    settings = Settings(  # type: ignore[call-arg]
+        customer_management_base_url=None,
+        bearer_token="tok",
+        _env_file=None,
+    )
+    with pytest.raises(ValueError, match="OPENWEALTH_CUSTOMER_MANAGEMENT_BASE_URL"):
+        settings.base_url_for("customer")
+
+
 def test_missing_auth_raises(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("OPENWEALTH_BEARER_TOKEN", raising=False)
     monkeypatch.delenv("OPENWEALTH_AUTH_HEADER", raising=False)

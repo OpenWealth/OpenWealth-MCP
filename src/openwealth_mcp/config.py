@@ -44,6 +44,13 @@ class Settings(BaseSettings):
             "Required when running the Trading MCP server."
         ),
     )
+    customer_management_base_url: str | None = Field(
+        default=None,
+        description=(
+            "Customer Management API base URL including path prefix, no trailing slash. "
+            "Required when running the Customer Management MCP server."
+        ),
+    )
     bearer_token: str | None = Field(default=None)
     auth_header: str | None = Field(
         default=None,
@@ -63,7 +70,9 @@ class Settings(BaseSettings):
         description="Optional log file path (also logs to stderr).",
     )
 
-    @field_validator("custody_base_url", "trading_base_url", mode="before")
+    @field_validator(
+        "custody_base_url", "trading_base_url", "customer_management_base_url", mode="before"
+    )
     @classmethod
     def normalize_base_url(cls, value: object) -> object:
         if not isinstance(value, str):
@@ -96,12 +105,21 @@ class Settings(BaseSettings):
             return f"Bearer {token}"
         return None
 
-    def base_url_for(self, service: Literal["custody", "trading"]) -> str:
+    def base_url_for(self, service: Literal["custody", "trading", "customer"]) -> str:
         """Return the base URL for the given service, raising if not configured."""
-        url = self.custody_base_url if service == "custody" else self.trading_base_url
+        _url_map: dict[str, str | None] = {
+            "custody": self.custody_base_url,
+            "trading": self.trading_base_url,
+            "customer": self.customer_management_base_url,
+        }
+        url = _url_map[service]
         if not url:
-            env_var = f"OPENWEALTH_{service.upper()}_BASE_URL"
-            raise ValueError(f"{env_var} is required but not set")
+            env_var_map: dict[str, str] = {
+                "custody": "OPENWEALTH_CUSTODY_BASE_URL",
+                "trading": "OPENWEALTH_TRADING_BASE_URL",
+                "customer": "OPENWEALTH_CUSTOMER_MANAGEMENT_BASE_URL",
+            }
+            raise ValueError(f"{env_var_map[service]} is required but not set")
         return url
 
 
