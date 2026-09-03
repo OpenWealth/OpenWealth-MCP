@@ -1,0 +1,112 @@
+[project]
+name = "openwealth-mcp"
+dynamic = ["version"]
+description = "MCP servers for the OpenWealth Custody and Trading Services APIs"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [
+    { name = "Synpulse8", email = "openwealth@synpulse8.com" },
+]
+keywords = ["openwealth", "mcp", "fastmcp", "custody", "trading", "fintech", "llm"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Financial and Insurance Industry",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Office/Business :: Financial",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+dependencies = [
+    "httpx>=0.27.0",
+    "fastmcp>=3.0",
+    "pydantic>=2.0",
+    "pydantic-settings>=2.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/synpulse-openwealth/openwealth-mcp"
+Repository = "https://github.com/synpulse-openwealth/openwealth-mcp"
+Issues = "https://github.com/synpulse-openwealth/openwealth-mcp/issues"
+Changelog = "https://github.com/synpulse-openwealth/openwealth-mcp/blob/master/CHANGELOG.md"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24.0",
+    "pytest-cov>=5.0",
+    "ruff>=0.9.0",
+    "mypy>=1.14.0",
+    "pre-commit>=4.0.0",
+    "pyyaml>=6.0",
+    "types-PyYAML>=6.0",
+]
+
+[project.scripts]
+openwealth-custody-mcp  = "openwealth_mcp.server:main"
+openwealth-trading-mcp  = "openwealth_mcp.trading.server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+path = "src/openwealth_mcp/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/openwealth_mcp"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"specs/custodyAPI.yaml"  = "openwealth_mcp/specs/custodyAPI.yaml"
+"specs/tradingAPI.yaml"  = "openwealth_mcp/specs/tradingAPI.yaml"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = [
+    "--cov=openwealth_mcp",
+    "--cov-report=term-missing",
+    "--cov-fail-under=84",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["openwealth_mcp"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.ruff.lint.per-file-ignores]
+"src/openwealth_mcp/resources/custody.py"  = ["E501"]
+"src/openwealth_mcp/resources/trading.py"  = ["E501"]
+"src/openwealth_mcp/tools/trading.py"      = ["E501"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+packages = ["openwealth_mcp"]
+mypy_path = "src"
+warn_unused_configs = true
+
+[[tool.mypy.overrides]]
+module = ["fastmcp.*"]
+ignore_missing_imports = true

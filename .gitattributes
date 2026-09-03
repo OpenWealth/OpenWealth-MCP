@@ -1,0 +1,16 @@
+# Normalise all text files to LF on commit; check out as LF everywhere.
+* text=auto eol=lf
+
+# Explicitly mark binary files so git never mangles them.
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.zip binary
+*.gz  binary
+*.whl binary
+*.pyc binary
+
+# YAML spec files — keep as LF
+*.yaml text eol=lf
+*.yml  text eol=lf
