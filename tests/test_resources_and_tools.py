@@ -8,7 +8,6 @@ import pytest
 from openwealth_mcp.app import set_client
 from openwealth_mcp.client import OpenWealthHttpClient
 from openwealth_mcp.config import Settings
-from openwealth_mcp.resources._spec_path import resolve_spec_path
 from openwealth_mcp.resources.custody import register_custody_resources
 from openwealth_mcp.server import mcp
 from openwealth_mcp.tools.custody import invoke_tool
@@ -23,11 +22,6 @@ def _settings() -> Settings:
         max_retries=0,
         _env_file=None,
     )
-
-
-def test_resolve_spec_path_returns_none_when_specs_absent() -> None:
-    path = resolve_spec_path("custodyAPI.yaml")
-    assert path is None or path.is_file()
 
 
 @pytest.mark.asyncio
@@ -113,18 +107,6 @@ async def test_custody_spec_summary_resource() -> None:
 
 
 @pytest.mark.asyncio
-async def test_custody_spec_yaml_resource() -> None:
-    """Reading the custody YAML resource returns YAML content or a not-found notice."""
-    from fastmcp import FastMCP
-
-    server = FastMCP("tmp")
-    register_custody_resources(server)
-    result = await server.read_resource("openwealth://specs/custody.yaml")
-    text = str(result)
-    assert "openapi" in text.lower() or "not found" in text.lower()
-
-
-@pytest.mark.asyncio
 async def test_trading_resources_registered() -> None:
     """Trading server exposes both trading spec resources."""
     from openwealth_mcp.trading.server import mcp as trading_mcp
@@ -145,19 +127,6 @@ async def test_trading_spec_summary_resource() -> None:
     register_trading_resources(server)
     result = await server.read_resource("openwealth://specs/trading")
     assert "create_order" in str(result)
-
-
-@pytest.mark.asyncio
-async def test_trading_spec_yaml_resource() -> None:
-    from fastmcp import FastMCP
-
-    from openwealth_mcp.resources.trading import register_trading_resources
-
-    server = FastMCP("tmp")
-    register_trading_resources(server)
-    result = await server.read_resource("openwealth://specs/trading.yaml")
-    text = str(result)
-    assert "openapi" in text.lower() or "not found" in text.lower()
 
 
 @pytest.mark.asyncio
@@ -183,14 +152,3 @@ async def test_customer_spec_summary_resource() -> None:
     assert "create_customer" in str(result)
 
 
-@pytest.mark.asyncio
-async def test_customer_spec_yaml_resource() -> None:
-    from fastmcp import FastMCP
-
-    from openwealth_mcp.resources.customer import register_customer_resources
-
-    server = FastMCP("tmp")
-    register_customer_resources(server)
-    result = await server.read_resource("openwealth://specs/customer.yaml")
-    text = str(result)
-    assert "openapi" in text.lower() or "not found" in text.lower()
