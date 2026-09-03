@@ -1,11 +1,17 @@
 name: Publish to PyPI
 
-# Triggered only by a "v*" tag push.
-# Tags are created automatically by tag-release.yml after a release PR is merged,
-# or manually with:  git tag vX.Y.Z && git push origin vX.Y.Z
+# Triggered in two ways:
+#
+#   1. workflow_dispatch on a tag ref — called automatically by tag-release.yml
+#      after the release PR merges (GITHUB_TOKEN cannot trigger push events,
+#      but CAN trigger workflow_dispatch via the REST API).
+#
+#   2. push: tags v* — for manual tag pushes:
+#        git tag vX.Y.Z && git push origin vX.Y.Z
 #
 # Pipeline: build → publish-testpypi → publish-pypi
 on:
+  workflow_dispatch:
   push:
     tags:
       - "v*"
