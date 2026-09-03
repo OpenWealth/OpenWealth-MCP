@@ -9,6 +9,10 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+---
+
+## [0.3.1] — 2026-09-03
+
 ### Added
 
 - **`openwealth-customer-mcp`** — new MCP server for the OpenWealth Customer
