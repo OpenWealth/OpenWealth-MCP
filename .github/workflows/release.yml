@@ -1,0 +1,143 @@
+name: Create Release PR
+
+# Bumps the version, updates CHANGELOG.md, and opens a PR against main.
+# No tag is created here — the tag is created automatically by tag-release.yml
+# once this PR is merged into main.
+#
+# Usage:
+#   GitHub UI:  Actions → "Create Release PR" → Run workflow → choose bump / version
+#   CLI:        gh workflow run release.yml --field bump=minor
+#               gh workflow run release.yml --field version=1.0.0
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Version bump type (ignored when 'version' is set)"
+        required: false
+        default: patch
+        type: choice
+        options: [patch, minor, major]
+      version:
+        description: "Exact version to release, e.g. 1.0.0 (overrides 'bump')"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  bump-pr:
+    name: Bump version & open PR
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e  # v6
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.13
+
+      - name: Install package to read current version
+        run: uv sync --frozen
+
+      - name: Compute new version
+        id: bump
+        run: |
+          # Read current version and strip pre-release suffixes (e.g. "0.3.0b1" → "0.3.0")
+          CURRENT=$(uv run python -c "import importlib.metadata; print(importlib.metadata.version('openwealth-mcp'))")
+          BASE=$(echo "$CURRENT" | grep -oP '^\d+\.\d+\.\d+')
+          MAJOR=$(echo "$BASE" | cut -d. -f1)
+          MINOR=$(echo "$BASE" | cut -d. -f2)
+          PATCH=$(echo "$BASE" | cut -d. -f3)
+
+          EXPLICIT="${{ inputs.version }}"
+          BUMP_TYPE="${{ inputs.bump }}"
+
+          if [ -n "$EXPLICIT" ]; then
+            NEW_VER="$EXPLICIT"
+          elif [ "$BUMP_TYPE" = "major" ]; then
+            NEW_VER="$((MAJOR+1)).0.0"
+          elif [ "$BUMP_TYPE" = "minor" ]; then
+            NEW_VER="${MAJOR}.$((MINOR+1)).0"
+          else
+            NEW_VER="${MAJOR}.${MINOR}.$((PATCH+1))"
+          fi
+
+          echo "Bumping ${CURRENT} → ${NEW_VER}"
+          echo "new_version=${NEW_VER}" >> "$GITHUB_OUTPUT"
+
+      - name: Create release branch and bump files
+        id: branch
+        run: |
+          NEW_VER="${{ steps.bump.outputs.new_version }}"
+          BRANCH="release/v${NEW_VER}"
+          echo "name=${BRANCH}" >> "$GITHUB_OUTPUT"
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+
+          # Bump __version__ (single source of truth)
+          sed -i "s/__version__ = \".*\"/__version__ = \"${NEW_VER}\"/" \
+              src/openwealth_mcp/__init__.py
+
+          # Promote [Unreleased] → [x.y.z] in CHANGELOG
+          TODAY=$(date +%Y-%m-%d)
+          sed -i "s/## \[Unreleased\]/## [${NEW_VER}] — ${TODAY}/" CHANGELOG.md
+
+          # Insert a fresh [Unreleased] section above the new release header
+          LINE=$(grep -n "## \[${NEW_VER}\]" CHANGELOG.md | cut -d: -f1)
+          sed -i "${LINE}i ## [Unreleased]\n\n---\n" CHANGELOG.md
+
+          # Update [Unreleased] diff link at the bottom
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD 2>/dev/null || echo "")
+          REPO_URL=$(git remote get-url origin | sed 's/\.git$//')
+          if [ -n "$PREV_TAG" ] && grep -q "^\[Unreleased\]:" CHANGELOG.md; then
+            sed -i "s|^\[Unreleased\]:.*|\[Unreleased\]: ${REPO_URL}/compare/v${NEW_VER}...HEAD|" CHANGELOG.md
+            sed -i "/^\[Unreleased\]:/a [${NEW_VER}]: ${REPO_URL}/compare/${PREV_TAG}...v${NEW_VER}" CHANGELOG.md
+          fi
+
+          git add src/openwealth_mcp/__init__.py CHANGELOG.md
+          git commit -m "chore: release v${NEW_VER}"
+
+          git push origin "$BRANCH"
+
+      - name: Open PR against main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          NEW_VER="${{ steps.bump.outputs.new_version }}"
+          BRANCH="${{ steps.branch.outputs.name }}"
+
+          PR_URL=$(gh pr create \
+            --title "chore: release v${NEW_VER}" \
+            --body "## Release v${NEW_VER}
+
+          Automated version bump — review the diff, then **merge to trigger the publish pipeline**.
+
+          ### What happens after merge
+          1. \`tag-release.yml\` detects the \`chore: release v${NEW_VER}\` commit on \`main\`
+          2. Creates and pushes tag \`v${NEW_VER}\` pointing to the merge commit
+          3. \`publish.yml\` fires on the tag → builds wheel/sdist → publishes to TestPyPI then PyPI
+
+          ### Changes
+          - \`src/openwealth_mcp/__init__.py\` — version bumped to \`${NEW_VER}\`
+          - \`CHANGELOG.md\` — \`[Unreleased]\` promoted to \`[${NEW_VER}]\`" \
+            --base main \
+            --head "$BRANCH")
+
+          echo "PR opened: $PR_URL"
+
+          # Enable auto-merge so the PR merges automatically once required checks pass.
+          # If branch protection requires human review, the PR stays open for manual merge.
+          gh pr merge "$PR_URL" --squash --auto || \
+            echo "::notice::Auto-merge not available (branch protection requires review). Merge the PR manually."

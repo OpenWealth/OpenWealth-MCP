@@ -1,0 +1,62 @@
+name: Tag Release
+
+# Fires on every push to main. When the HEAD commit message starts with
+# "chore: release v", extracts the version and creates the matching tag.
+#
+# This is the bridge between the release PR merge and the publish pipeline:
+#
+#   release.yml  →  PR "chore: release vX.Y.Z"  →  merge to main
+#                                                         │
+#                                                  [this workflow]
+#                                                  creates tag vX.Y.Z
+#                                                         │
+#                                                  publish.yml fires
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  tag:
+    name: Create release tag
+    # Only run when the commit is a release bump (chore: release vX.Y.Z)
+    if: startsWith(github.event.head_commit.message, 'chore: release v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract version from commit message
+        id: version
+        run: |
+          MSG="${{ github.event.head_commit.message }}"
+          # Extract "vX.Y.Z" from "chore: release vX.Y.Z" (ignores PR number suffix)
+          TAG=$(echo "$MSG" | grep -oP 'v\d+\.\d+\.\d+' | head -1)
+          if [ -z "$TAG" ]; then
+            echo "ERROR: could not parse version from commit message: $MSG"
+            exit 1
+          fi
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "Detected release tag: ${TAG}"
+
+      - name: Check tag does not already exist
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          if git ls-remote --tags origin "$TAG" | grep -q "$TAG"; then
+            echo "::warning::Tag ${TAG} already exists — skipping."
+            exit 0
+          fi
+
+      - name: Create and push tag
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "$TAG"
+          git push origin "$TAG"
+          echo "::notice::Tag ${TAG} pushed → publish.yml will fire now."

@@ -39,70 +39,87 @@ In the GitHub repo → Settings → Environments:
 
 The environment names must match those configured on PyPI/TestPyPI above.
 
+### 4. Allow GitHub Actions to create PRs and push tags
+
+Settings → Actions → General → Workflow permissions:
+
+- Select **"Read and write permissions"**
+- Enable **"Allow GitHub Actions to create and approve pull requests"**
+
 ---
 
 ## Recurring release process
 
-The workflow supports two release paths:
+The release pipeline is split across three workflows:
 
-### Path 1 — Automated via GitHub Actions UI (recommended)
+```
+release.yml        →   creates a "chore: release vX.Y.Z" PR against main
+                                    │
+                          (review + merge)
+                                    │
+tag-release.yml    →   detects the merge commit, pushes tag vX.Y.Z
+                                    │
+publish.yml        →   fires on the tag: build → TestPyPI → PyPI
+```
 
-Trigger the workflow manually from **GitHub → Actions → "Publish to PyPI" →
-"Run workflow"** and choose:
+The tag always points to a commit on `main`, so the repo history is always
+consistent with the published artifact.
+
+---
+
+### Step 1 — Open a release PR
+
+**Via GitHub UI:**  Actions → "Create Release PR" → Run workflow → choose:
 
 | Input | Description |
 |-------|-------------|
 | `bump` | `patch` (default), `minor`, or `major` — computed from the current `__version__` |
 | `version` | Optional exact version (e.g. `1.0.0`). When set, overrides `bump`. |
 
-The workflow will:
-1. Create a `release/vX.Y.Z` branch from `main`
-2. Bump `__version__` in `src/openwealth_mcp/__init__.py`
-3. Promote `[Unreleased]` in `CHANGELOG.md` to the new version with today's date
-4. Commit the changes as `chore: release vX.Y.Z` on the release branch
-5. Push the `vX.Y.Z` tag (this triggers the build + publish path automatically)
-6. Open a PR `release/vX.Y.Z` → `main` for review and merge
-
-Then, triggered by the tag push:
-
-7. Build wheel + sdist, validate with `twine check`
-8. Publish to TestPyPI, then to PyPI
-
-Merge the auto-opened PR once the publish run succeeds.
-
-> **Note:** the workflow never pushes directly to `main` — it always goes
-> through a PR, respecting branch protection rules.
-
-Or trigger it from the CLI:
-
+**Via CLI:**
 ```bash
-# Patch bump (0.3.0 → 0.3.1)
-gh workflow run publish.yml --field bump=patch
-
-# Minor bump (0.3.0 → 0.4.0)
-gh workflow run publish.yml --field bump=minor
-
-# Exact version override
-gh workflow run publish.yml --field version=1.0.0
+gh workflow run release.yml --field bump=minor
+gh workflow run release.yml --field version=1.0.0
 ```
 
-### Path 2 — Manual tag push
+The workflow creates a `release/vX.Y.Z` branch, bumps `__version__` and
+`CHANGELOG.md`, and opens a PR with auto-merge enabled.
 
-Use this when you want full control over the commit history (e.g. you already
-updated the CHANGELOG manually):
+### Step 2 — Review and merge the PR
 
-```
-1. Bump __version__ in src/openwealth_mcp/__init__.py (e.g. "0.3.0" → "0.4.0")
-2. Update CHANGELOG.md (move [Unreleased] entries to a new [0.4.0] section)
-3. Commit: git commit -m "chore: release v0.4.0"
-4. Tag:    git tag v0.4.0
-5. Push:   git push && git push --tags
-```
+Check the diff (only `__init__.py` and `CHANGELOG.md` change). If auto-merge is
+enabled and all required checks pass, the PR merges automatically. Otherwise
+merge it manually.
 
-The `publish.yml` workflow fires automatically on the `v*` tag and skips the
-bump job, going straight to build → TestPyPI → PyPI.
+### Step 3 — Tag and publish (automatic)
+
+Once the PR lands on `main`:
+
+1. `tag-release.yml` fires, reads the version from the commit message, and
+   pushes tag `vX.Y.Z` pointing to the merge commit on `main`.
+2. `publish.yml` fires on the tag:
+   - Verifies `__version__` matches the tag
+   - Builds wheel + sdist with `uv build`
+   - Validates with `twine check`
+   - Publishes to TestPyPI (environment `testpypi`)
+   - Publishes to PyPI (environment `pypi`)
 
 Watch progress in the repo → Actions → "Publish to PyPI".
+
+---
+
+## Manual release (bypass automation)
+
+Use this when CI is unavailable or you need full control:
+
+```bash
+# 1. Edit src/openwealth_mcp/__init__.py — bump __version__
+# 2. Edit CHANGELOG.md — promote [Unreleased] to [x.y.z]
+git commit -am "chore: release v0.4.0"
+git push                      # merge to main via PR or direct push
+git tag v0.4.0
+git push origin v0.4.0        # triggers publish.yml directly
+```
 
 ---
 
@@ -138,27 +155,10 @@ PyPI account settings and delete it after use.
 
 ---
 
-## Workflow permissions note
-
-The `bump-and-tag` job pushes a `release/vX.Y.Z` branch and a tag, and opens
-a PR — it never pushes directly to `main`. This is compatible with protected
-branch rules that require pull requests.
-
-It requires **"Read and write permissions"** for `GITHUB_TOKEN` (Settings →
-Actions → General → Workflow permissions). This is the default on most
-repositories.
-
-If your repository uses restricted token permissions, either:
-
-- Change it to **"Read and write permissions"**, or
-- Create a PAT with `contents: write` and `pull-requests: write` scopes, store
-  it as a secret (e.g. `RELEASE_TOKEN`), and replace `secrets.GITHUB_TOKEN`
-  with `secrets.RELEASE_TOKEN` in the `bump-and-tag` checkout step.
-
----
-
 ## Related
 
-- Workflow: [`.github/workflows/publish.yml`](../.github/workflows/publish.yml)
+- Release PR workflow: [`.github/workflows/release.yml`](../.github/workflows/release.yml)
+- Tag workflow: [`.github/workflows/tag-release.yml`](../.github/workflows/tag-release.yml)
+- Publish workflow: [`.github/workflows/publish.yml`](../.github/workflows/publish.yml)
 - CI build step: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml)
 - Local dev: [`docs/local-dev.md`](local-dev.md)
