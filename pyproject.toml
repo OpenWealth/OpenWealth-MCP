@@ -63,9 +63,6 @@ path = "src/openwealth_mcp/__init__.py"
 [tool.hatch.build.targets.wheel]
 packages = ["src/openwealth_mcp"]
 
-[tool.hatch.build.targets.wheel.force-include]
-"specs/custodyAPI.yaml"  = "openwealth_mcp/specs/custodyAPI.yaml"
-"specs/tradingAPI.yaml"  = "openwealth_mcp/specs/tradingAPI.yaml"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

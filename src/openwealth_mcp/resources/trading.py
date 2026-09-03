@@ -10,7 +10,6 @@ _SPEC_SUMMARY = """\
 # OpenWealth Trading (Order Placement) API v3.0.1
 
 Docs: https://sandbox.openwealth.synpulse8.com/docs?api=order-placement-3-0-1
-Spec: specs/tradingAPI.yaml (vendored)
 
 ## IMPORTANT: Financial impact
 

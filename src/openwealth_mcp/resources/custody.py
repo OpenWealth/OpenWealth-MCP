@@ -13,7 +13,6 @@ _SPEC_SUMMARY = """\
 # OpenWealth Custody Services API v3.2.0
 
 Docs: https://sandbox.openwealth.synpulse8.com/docs?api=custody-services-3-2-0
-Spec: specs/custodyAPI.yaml (vendored)
 
 | Tool | operationId | Method path |
 |------|-------------|-------------|
