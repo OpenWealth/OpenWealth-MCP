@@ -25,7 +25,8 @@ jobs:
     if: "startsWith(github.event.head_commit.message, 'chore: release v')"
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: write   # push tag
+      workflows: write  # gh workflow run (dispatch publish.yml)
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
