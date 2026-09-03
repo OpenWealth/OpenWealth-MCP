@@ -150,5 +150,3 @@ async def test_customer_spec_summary_resource() -> None:
     register_customer_resources(server)
     result = await server.read_resource("openwealth://specs/customer")
     assert "create_customer" in str(result)
-
-
