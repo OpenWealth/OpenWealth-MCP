@@ -1,14 +1,14 @@
 # OpenWealth MCP
 
-[![CI](https://github.com/synpulse-openwealth/openwealth-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/synpulse-openwealth/openwealth-mcp/actions/workflows/ci.yml)
+[![CI](https://github.com/OpenWealth/OpenWealth-MCP/actions/workflows/ci.yml/badge.svg)](https://github.com/OpenWealth/OpenWealth-MCP/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/openwealth-mcp)](https://pypi.org/project/openwealth-mcp/)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-Apache--2.0-green)](LICENSE)
 
-Two [FastMCP](https://gofastmcp.com/) servers that expose the
+Three [FastMCP](https://gofastmcp.com/) servers that expose the
 [OpenWealth](https://openwealth.ch/) APIs as MCP tools, so an AI assistant
-(Claude, Cursor, any MCP client) can read custody data and manage orders
-through a typed, audited interface instead of raw HTTP.
+(Claude, Cursor, any MCP client) can read custody data, manage orders, and
+onboard customers through a typed, audited interface instead of raw HTTP.
 
 | Server | API | Console script | Tools |
 |--------|-----|----------------|-------|
@@ -16,9 +16,10 @@ through a typed, audited interface instead of raw HTTP.
 | **Trading** | [Order Placement v3.0.1](https://sandbox.openwealth.synpulse8.com/docs?api=order-placement-3-0-1) — orders, executions, quotes, subscriptions | `openwealth-trading-mcp` | 18 (full lifecycle) |
 | **Customer** | [Customer Management v2.0.6](https://sandbox.openwealth.synpulse8.com/docs?api=customer-management-2-0-6) — customers, persons, contacts, addresses, documents, KYC | `openwealth-customer-mcp` | 26 (full lifecycle) |
 
-Both ship in one Python package and speak **MCP over stdio**. OpenAPI specs are
+All three ship in one Python package and speak **MCP over stdio**. OpenAPI specs are
 vendored from [SFTI ca-wealth](https://github.com/swissfintechinnovations/ca-wealth)
-and served as MCP resources.
+and served as sanitized MCP resources (server URLs and auth schemes are stripped
+before the spec is exposed to the LLM).
 
 > ⚠️ **Trading places real orders.** `create_order` is a financially
 > consequential tool. Read [Safety model](#safety-model) before pointing it at
@@ -62,8 +63,8 @@ Requires **Python ≥ 3.11** and a bearer token for an OpenWealth endpoint
 To install from source for development:
 
 ```bash
-git clone https://github.com/synpulse-openwealth/openwealth-mcp.git
-cd openwealth-mcp
+git clone https://github.com/OpenWealth/OpenWealth-MCP.git
+cd OpenWealth-MCP
 pip install -e ".[dev]"    # or: uv sync --extra dev
 ```
 
@@ -109,10 +110,23 @@ Configure **each server separately** — each needs its own base URL and token.
 {
   "mcpServers": {
     "openwealth-custody": {
-      "command": "python",
-      "args": ["-m", "openwealth_mcp"],
+      "command": "openwealth-custody-mcp",
       "env": {
         "OPENWEALTH_CUSTODY_BASE_URL": "https://api.openwealth.synpulse8.com/api/custody-services/v3",
+        "OPENWEALTH_BEARER_TOKEN": "<jwt>"
+      }
+    },
+    "openwealth-trading": {
+      "command": "openwealth-trading-mcp",
+      "env": {
+        "OPENWEALTH_TRADING_BASE_URL": "https://<host>/api/trading-services/v1",
+        "OPENWEALTH_BEARER_TOKEN": "<jwt>"
+      }
+    },
+    "openwealth-customer": {
+      "command": "openwealth-customer-mcp",
+      "env": {
+        "OPENWEALTH_CUSTOMER_MANAGEMENT_BASE_URL": "https://api.openwealth.synpulse8.com/api/customer-management/v2",
         "OPENWEALTH_BEARER_TOKEN": "<jwt>"
       }
     }
@@ -128,8 +142,8 @@ restart the server. Supply the token **without** the `Bearer ` prefix; the
 client adds it.
 
 Full client wiring, WSL specifics and troubleshooting live in
-[`wiki/runbooks/mcp-clients.md`](wiki/runbooks/mcp-clients.md) and
-[`wiki/runbooks/local-dev.md`](wiki/runbooks/local-dev.md).
+[`docs/mcp-clients.md`](docs/mcp-clients.md) and
+[`docs/local-dev.md`](docs/local-dev.md).
 
 ---
 
@@ -157,13 +171,8 @@ one). Host and credentials are never hard-coded.
 Startup fails fast if neither `OPENWEALTH_BEARER_TOKEN` nor `OPENWEALTH_AUTH_HEADER` is set.
 The URL for each server is validated at startup — a missing URL prints a clear error and exits.
 
-> **Breaking change (v0.3.0):** `OPENWEALTH_BASE_URL` has been replaced by
-> `OPENWEALTH_CUSTODY_BASE_URL` and `OPENWEALTH_TRADING_BASE_URL`. Update your
-> `.env` file and MCP client configs accordingly.
-
-**Transport is stdio only.** HTTP transport and JWKS ingress were removed in
-favour of a smaller surface; see
-[`wiki/decisions/defer-mcp-gateway.md`](wiki/decisions/defer-mcp-gateway.md).
+**Transport is stdio only.** HTTP transport and JWKS ingress are out of scope
+in favour of a smaller surface.
 
 ---
 
@@ -249,12 +258,12 @@ OpenAPI spec makes it mandatory.
 
 | URI | Content |
 |-----|---------|
-| `openwealth://specs/custody` | Custody tool/endpoint table |
-| `openwealth://specs/custody.yaml` | Vendored Custody OpenAPI YAML |
+| `openwealth://specs/custody` | Custody tool/endpoint table (Markdown) |
+| `openwealth://specs/custody.yaml` | Custody OpenAPI schema reference (server URLs and auth stripped) |
 | `openwealth://specs/trading` | Trading tool/endpoint table with financial-impact notes |
-| `openwealth://specs/trading.yaml` | Vendored Trading OpenAPI YAML |
+| `openwealth://specs/trading.yaml` | Trading OpenAPI schema reference (server URLs and auth stripped) |
 | `openwealth://specs/customer` | Customer Management tool/endpoint table with write-impact notes |
-| `openwealth://specs/customer.yaml` | Vendored Customer Management OpenAPI YAML |
+| `openwealth://specs/customer.yaml` | Customer Management OpenAPI schema reference (server URLs and auth stripped) |
 
 ---
 
@@ -304,9 +313,9 @@ See [`CONTRIBUTING.md`](CONTRIBUTING.md) for full contribution guidelines.
 |-------|------|
 | [`CHANGELOG.md`](CHANGELOG.md) | Release history |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | Dev setup and contribution guidelines |
-| [`wiki/index.md`](wiki/index.md) | Agent-maintained knowledge base — entities, concepts, decisions, runbooks |
-| [`AGENTS.md`](AGENTS.md) | Schema and conventions for the wiki |
-| [`raw/`](raw/) | Immutable source notes |
+| [`docs/mcp-clients.md`](docs/mcp-clients.md) | MCP client configuration (Claude, Cursor, WSL) |
+| [`docs/local-dev.md`](docs/local-dev.md) | Local development setup |
+| [`docs/release.md`](docs/release.md) | Release and publishing process |
 | [`specs/`](specs/) | Vendored OpenAPI definitions |
 | [`SECURITY.md`](SECURITY.md) | Vulnerability reporting and secret handling |
 
@@ -317,8 +326,7 @@ See [`CONTRIBUTING.md`](CONTRIBUTING.md) for full contribution guidelines.
 Custody is read-only (GET). Trading covers the full order lifecycle
 (GET, POST, PUT, DELETE). Customer Management covers the full customer
 onboarding and lifecycle (GET, POST, PUT, DELETE). HTTP transport, JWKS ingress
-and a central MCP gateway are out of scope — see
-[`wiki/decisions/defer-mcp-gateway.md`](wiki/decisions/defer-mcp-gateway.md) for the reasoning.
+and a central MCP gateway are out of scope.
 
 ---
 
