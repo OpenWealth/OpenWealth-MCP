@@ -230,6 +230,8 @@ OpenAPI spec makes it mandatory.
 | `get_prospect_precheck` | `getPreCheck` | `GET /prospect-precheck/{temporaryId}` |
 | `get_status` | `getStatusByTemporaryId` | `GET /status/{temporaryId}` |
 
+⚠️ marks tools that create **regulatory or compliance-significant entities** (`customer`, `person`, `document`, `kyc`) — records that are hard to reverse and carry KYC/AML implications. Write tools on softer, mutable data (`contact`, `address`, `prospect_precheck`) are not marked because they can be freely updated or deleted without compliance impact. All Customer Management write tools are still **never retried** regardless of the ⚠️ marker — see [Safety model](#safety-model).
+
 ### MCP resources
 
 | URI | Content |
