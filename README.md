@@ -17,7 +17,7 @@ onboard customers through a typed, audited interface instead of raw HTTP.
 | **Customer** | [Customer Management v2.0.6](https://sandbox.openwealth.synpulse8.com/docs?api=customer-management-2-0-6) — customers, persons, contacts, addresses, documents, KYC | `openwealth-customer-mcp` | 26 (full lifecycle) |
 
 All three ship in one Python package and speak **MCP over stdio**. OpenAPI specs are
-vendored from [SFTI ca-wealth](https://github.com/swissfintechinnovations/ca-wealth)
+vendored from [OpenWealth](https://openwealth.ch/)
 and served as sanitized MCP resources (server URLs and auth schemes are stripped
 before the spec is exposed to the LLM).
 
@@ -230,6 +230,8 @@ OpenAPI spec makes it mandatory.
 | `get_prospect_precheck` | `getPreCheck` | `GET /prospect-precheck/{temporaryId}` |
 | `get_status` | `getStatusByTemporaryId` | `GET /status/{temporaryId}` |
 
+⚠️ marks tools that create **regulatory or compliance-significant entities** (`customer`, `person`, `document`, `kyc`) — records that are hard to reverse and carry KYC/AML implications. Write tools on softer, mutable data (`contact`, `address`, `prospect_precheck`) are not marked because they can be freely updated or deleted without compliance impact. All Customer Management write tools are still **never retried** regardless of the ⚠️ marker — see [Safety model](#safety-model).
+
 ### MCP resources
 
 | URI | Content |
@@ -267,13 +269,26 @@ Always confirm order details with a human before calling `create_order`.
 
 ## Development
 
+**With uv (recommended):**
+
 ```bash
-uv sync --extra dev          # or: pip install -e ".[dev]"
+uv sync --extra dev
 
 uv run ruff check src tests
 uv run ruff format --check src tests
-uv run mypy                  # strict
-uv run pytest -q             # coverage gate: 84%
+uv run mypy
+uv run pytest -q
+```
+
+**With pip:**
+
+```bash
+pip install -e ".[dev]"
+
+ruff check src tests
+ruff format --check src tests
+mypy
+pytest -q
 ```
 
 The same four gates run in CI on every push and pull request across Python 3.11,
