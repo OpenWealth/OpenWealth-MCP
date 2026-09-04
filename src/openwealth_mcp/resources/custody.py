@@ -5,6 +5,7 @@ Keeps filesystem I/O and static content out of ``server.py``.
 
 from __future__ import annotations
 
+import yaml
 from fastmcp import FastMCP
 
 from openwealth_mcp.resources._spec_path import resolve_spec_path
@@ -41,8 +42,19 @@ def register_custody_resources(mcp: FastMCP) -> None:
 
     @mcp.resource("openwealth://specs/custody.yaml")
     def custody_spec_yaml() -> str:
-        """Vendored OpenAPI YAML for Custody Services v3.2.0."""
+        """Schema reference for Custody Services v3.2.0.
+
+        Use this resource to understand request/response schemas and field types.
+        All API interactions MUST go through the provided MCP tools — never
+        construct or call HTTP endpoints directly.
+        """
         path = resolve_spec_path("custodyAPI.yaml")
         if path is None:
             return _SPEC_NOT_FOUND
-        return path.read_text(encoding="utf-8")
+        spec: dict[str, object] = yaml.safe_load(path.read_text(encoding="utf-8"))
+        spec.pop("servers", None)
+        spec.pop("security", None)
+        components = spec.get("components")
+        if isinstance(components, dict):
+            components.pop("securitySchemes", None)
+        return yaml.dump(spec, allow_unicode=True, sort_keys=False)

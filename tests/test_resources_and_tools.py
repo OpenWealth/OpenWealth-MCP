@@ -150,3 +150,63 @@ async def test_customer_spec_summary_resource() -> None:
     register_customer_resources(server)
     result = await server.read_resource("openwealth://specs/customer")
     assert "create_customer" in str(result)
+
+
+# ── Sanitization tests: *.yaml resources must not expose server URLs ────────
+
+
+_SPEC_NOT_FOUND_SENTINEL = "not found"
+
+
+@pytest.mark.asyncio
+async def test_custody_spec_yaml_sanitized() -> None:
+    """custody.yaml resource strips servers/security; schema content is present."""
+    from fastmcp import FastMCP
+
+    from openwealth_mcp.resources.custody import register_custody_resources
+
+    server = FastMCP("tmp")
+    register_custody_resources(server)
+    result = str(await server.read_resource("openwealth://specs/custody.yaml"))
+    if _SPEC_NOT_FOUND_SENTINEL in result:
+        pytest.skip("custodyAPI.yaml not present in specs/")
+    assert "servers:" not in result, "servers: section must be stripped"
+    assert "security:" not in result, "security: section must be stripped"
+    assert "securitySchemes:" not in result, "securitySchemes must be stripped"
+    assert "openapi:" in result, "OpenAPI document structure must be intact"
+
+
+@pytest.mark.asyncio
+async def test_trading_spec_yaml_sanitized() -> None:
+    """trading.yaml resource strips servers/security; schema content is present."""
+    from fastmcp import FastMCP
+
+    from openwealth_mcp.resources.trading import register_trading_resources
+
+    server = FastMCP("tmp")
+    register_trading_resources(server)
+    result = str(await server.read_resource("openwealth://specs/trading.yaml"))
+    if _SPEC_NOT_FOUND_SENTINEL in result:
+        pytest.skip("tradingAPI.yaml not present in specs/")
+    assert "servers:" not in result, "servers: section must be stripped"
+    assert "security:" not in result, "security: section must be stripped"
+    assert "securitySchemes:" not in result, "securitySchemes must be stripped"
+    assert "openapi:" in result, "OpenAPI document structure must be intact"
+
+
+@pytest.mark.asyncio
+async def test_customer_spec_yaml_sanitized() -> None:
+    """customer.yaml resource strips servers/security; schema content is present."""
+    from fastmcp import FastMCP
+
+    from openwealth_mcp.resources.customer import register_customer_resources
+
+    server = FastMCP("tmp")
+    register_customer_resources(server)
+    result = str(await server.read_resource("openwealth://specs/customer.yaml"))
+    if _SPEC_NOT_FOUND_SENTINEL in result:
+        pytest.skip("customerAPI.yaml not present in specs/")
+    assert "servers:" not in result, "servers: section must be stripped"
+    assert "security:" not in result, "security: section must be stripped"
+    assert "securitySchemes:" not in result, "securitySchemes must be stripped"
+    assert "openapi:" in result, "OpenAPI document structure must be intact"
