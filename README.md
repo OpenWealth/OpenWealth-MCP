@@ -27,30 +27,6 @@ before the spec is exposed to the LLM).
 
 ---
 
-## Architecture
-
-```
-MCP client (Claude / Cursor / …)
-    │ stdio (JSON-RPC)
-    ▼
-openwealth-custody-mcp   openwealth-trading-mcp   openwealth-customer-mcp
-    │                            │                          │
-    ▼                            ▼                          ▼
- tools/                       tools/                     tools/
-    │                            │                          │
-    ▼                            ▼                          ▼
- CustodyService             TradingService           CustomerService
-    │                            │                          │
-    └────────────────┬───────────┴──────────────────────────┘
-                     ▼
-          OpenWealthHttpClient
-                     │ HTTPS
-                     ▼
-           OpenWealth API endpoints
-```
-
----
-
 ## Install
 
 ```bash
