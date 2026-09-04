@@ -17,7 +17,7 @@ onboard customers through a typed, audited interface instead of raw HTTP.
 | **Customer** | [Customer Management v2.0.6](https://sandbox.openwealth.synpulse8.com/docs?api=customer-management-2-0-6) — customers, persons, contacts, addresses, documents, KYC | `openwealth-customer-mcp` | 26 (full lifecycle) |
 
 All three ship in one Python package and speak **MCP over stdio**. OpenAPI specs are
-vendored from [SFTI ca-wealth](https://github.com/swissfintechinnovations/ca-wealth)
+vendored from [OpenWealth](https://openwealth.ch/)
 and served as sanitized MCP resources (server URLs and auth schemes are stripped
 before the spec is exposed to the LLM).
 
