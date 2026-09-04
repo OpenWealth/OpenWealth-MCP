@@ -1,6 +1,6 @@
 # OpenWealth MCP
 
-[![CI](https://github.com/OpenWealth/OpenWealth-MCP/actions/workflows/ci.yml/badge.svg)](https://github.com/OpenWealth/OpenWealth-MCP/actions/workflows/ci.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/OpenWealth/OpenWealth-MCP/ci.yml?branch=main&label=CI&logo=github)](https://github.com/OpenWealth/OpenWealth-MCP/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/openwealth-mcp)](https://pypi.org/project/openwealth-mcp/)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-Apache--2.0-green)](LICENSE)
@@ -24,30 +24,6 @@ before the spec is exposed to the LLM).
 > ⚠️ **Trading places real orders.** `create_order` is a financially
 > consequential tool. Read [Safety model](#safety-model) before pointing it at
 > anything other than the sandbox.
-
----
-
-## Architecture
-
-```
-MCP client (Claude / Cursor / …)
-    │ stdio (JSON-RPC)
-    ▼
-openwealth-custody-mcp   openwealth-trading-mcp   openwealth-customer-mcp
-    │                            │                          │
-    ▼                            ▼                          ▼
- tools/                       tools/                     tools/
-    │                            │                          │
-    ▼                            ▼                          ▼
- CustodyService             TradingService           CustomerService
-    │                            │                          │
-    └────────────────┬───────────┴──────────────────────────┘
-                     ▼
-          OpenWealthHttpClient
-                     │ HTTPS
-                     ▼
-           OpenWealth API endpoints
-```
 
 ---
 
