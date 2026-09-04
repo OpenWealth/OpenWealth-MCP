@@ -11,6 +11,10 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.3.4] — 2026-09-04
+
+---
+
 ## [0.3.3] — 2026-09-03
 
 ---
@@ -150,7 +154,8 @@ Initial release of the Custody MCP server.
 - Pydantic-validated settings; structured JSON error envelopes.
 - Vendored OpenAPI spec served as MCP resource.
 
-[Unreleased]: https://github.com/OpenWealth/OpenWealth-MCP/compare/v0.3.3...HEAD
+[Unreleased]: https://github.com/OpenWealth/OpenWealth-MCP/compare/v0.3.4...HEAD
+[0.3.4]: https://github.com/OpenWealth/OpenWealth-MCP/compare/v0.3.3...v0.3.4
 [0.3.3]: https://github.com/OpenWealth/OpenWealth-MCP/compare/v0.3.2...v0.3.3
 [0.3.0]: https://github.com/synpulse-openwealth/openwealth-mcp/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/synpulse-openwealth/openwealth-mcp/compare/v0.1.0...v0.2.0
