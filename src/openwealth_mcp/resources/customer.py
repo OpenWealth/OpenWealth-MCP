@@ -74,9 +74,10 @@ def register_customer_resources(mcp: FastMCP) -> None:
         path = resolve_spec_path("customerAPI.yaml")
         if path is None:
             return _SPEC_NOT_FOUND
-        spec: dict = yaml.safe_load(path.read_text(encoding="utf-8"))
+        spec: dict[str, object] = yaml.safe_load(path.read_text(encoding="utf-8"))
         spec.pop("servers", None)
         spec.pop("security", None)
-        if "components" in spec:
-            spec["components"].pop("securitySchemes", None)
+        components = spec.get("components")
+        if isinstance(components, dict):
+            components.pop("securitySchemes", None)
         return yaml.dump(spec, allow_unicode=True, sort_keys=False)
