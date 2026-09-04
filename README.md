@@ -269,13 +269,26 @@ Always confirm order details with a human before calling `create_order`.
 
 ## Development
 
+**With uv (recommended):**
+
 ```bash
-uv sync --extra dev          # or: pip install -e ".[dev]"
+uv sync --extra dev
 
 uv run ruff check src tests
 uv run ruff format --check src tests
-uv run mypy                  # strict
-uv run pytest -q             # coverage gate: 84%
+uv run mypy
+uv run pytest -q
+```
+
+**With pip:**
+
+```bash
+pip install -e ".[dev]"
+
+ruff check src tests
+ruff format --check src tests
+mypy
+pytest -q
 ```
 
 The same four gates run in CI on every push and pull request across Python 3.11,
