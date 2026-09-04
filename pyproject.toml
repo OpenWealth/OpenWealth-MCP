@@ -29,6 +29,7 @@ dependencies = [
     "pydantic>=2.0",
     "pydantic-settings>=2.0",
     "python-dotenv>=1.0.0",
+    "pyyaml>=6.0",
 ]
 
 [project.urls]
@@ -63,6 +64,7 @@ path = "src/openwealth_mcp/__init__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/openwealth_mcp"]
+force-include = {"specs" = "openwealth_mcp/specs"}
 
 
 [tool.pytest.ini_options]

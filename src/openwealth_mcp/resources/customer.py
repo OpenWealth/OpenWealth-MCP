@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import yaml
 from fastmcp import FastMCP
 
 from openwealth_mcp.resources._spec_path import resolve_spec_path
@@ -64,8 +65,18 @@ def register_customer_resources(mcp: FastMCP) -> None:
 
     @mcp.resource("openwealth://specs/customer.yaml")
     def customer_spec_yaml() -> str:
-        """Vendored OpenAPI YAML for Customer Management API v2.0.6."""
+        """Schema reference for Customer Management API v2.0.6.
+
+        Use this resource to understand request/response schemas and field types.
+        All API interactions MUST go through the provided MCP tools — never
+        construct or call HTTP endpoints directly.
+        """
         path = resolve_spec_path("customerAPI.yaml")
         if path is None:
             return _SPEC_NOT_FOUND
-        return path.read_text(encoding="utf-8")
+        spec: dict = yaml.safe_load(path.read_text(encoding="utf-8"))
+        spec.pop("servers", None)
+        spec.pop("security", None)
+        if "components" in spec:
+            spec["components"].pop("securitySchemes", None)
+        return yaml.dump(spec, allow_unicode=True, sort_keys=False)
