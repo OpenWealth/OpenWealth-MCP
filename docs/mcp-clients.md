@@ -27,21 +27,21 @@ Edit `claude_desktop_config.json` (macOS: `~/Library/Application Support/Claude/
     "openwealth-custody": {
       "command": "openwealth-custody-mcp",
       "env": {
-        "OPENWEALTH_CUSTODY_BASE_URL": "https://api.openwealth.synpulse8.com/api/custody-services/v3",
+        "OPENWEALTH_CUSTODY_BASE_URL": "<host>",
         "OPENWEALTH_BEARER_TOKEN": "<jwt>"
       }
     },
     "openwealth-trading": {
       "command": "openwealth-trading-mcp",
       "env": {
-        "OPENWEALTH_TRADING_BASE_URL": "https://<host>/api/trading-services/v1",
+        "OPENWEALTH_TRADING_BASE_URL": "<host>",
         "OPENWEALTH_BEARER_TOKEN": "<jwt>"
       }
     },
     "openwealth-customer": {
       "command": "openwealth-customer-mcp",
       "env": {
-        "OPENWEALTH_CUSTOMER_MANAGEMENT_BASE_URL": "https://api.openwealth.synpulse8.com/api/customer-management/v2",
+        "OPENWEALTH_CUSTOMER_MANAGEMENT_BASE_URL": "<host>",
         "OPENWEALTH_BEARER_TOKEN": "<jwt>"
       }
     }
@@ -65,21 +65,21 @@ global server:
       "command": "python",
       "args": ["-m", "openwealth_mcp"],
       "env": {
-        "OPENWEALTH_CUSTODY_BASE_URL": "https://api.openwealth.synpulse8.com/api/custody-services/v3",
+        "OPENWEALTH_CUSTODY_BASE_URL": "<host>",
         "OPENWEALTH_BEARER_TOKEN": "<jwt>"
       }
     },
     "openwealth-trading": {
       "command": "openwealth-trading-mcp",
       "env": {
-        "OPENWEALTH_TRADING_BASE_URL": "https://<host>/api/trading-services/v1",
+        "OPENWEALTH_TRADING_BASE_URL": "<host>",
         "OPENWEALTH_BEARER_TOKEN": "<jwt>"
       }
     },
     "openwealth-customer": {
       "command": "openwealth-customer-mcp",
       "env": {
-        "OPENWEALTH_CUSTOMER_MANAGEMENT_BASE_URL": "https://api.openwealth.synpulse8.com/api/customer-management/v2",
+        "OPENWEALTH_CUSTOMER_MANAGEMENT_BASE_URL": "<host>",
         "OPENWEALTH_BEARER_TOKEN": "<jwt>"
       }
     }
@@ -104,7 +104,7 @@ Windows (or vice versa), use a `wsl` command wrapper:
       "command": "wsl",
       "args": ["-e", "openwealth-custody-mcp"],
       "env": {
-        "OPENWEALTH_CUSTODY_BASE_URL": "https://api.openwealth.synpulse8.com/api/custody-services/v3",
+        "OPENWEALTH_CUSTODY_BASE_URL": "<host>",
         "OPENWEALTH_BEARER_TOKEN": "<jwt>"
       }
     }
@@ -130,15 +130,15 @@ Enable debug logging to see full request/response details:
 ### Smoke test
 
 ```bash
-OPENWEALTH_CUSTODY_BASE_URL=https://... OPENWEALTH_BEARER_TOKEN=<jwt> \
+OPENWEALTH_CUSTODY_BASE_URL=<host> OPENWEALTH_BEARER_TOKEN=<jwt> \
   openwealth-custody-mcp --check
-# prints: OK openwealth-custody v0.3.0 base_url=https://...
+# prints: OK openwealth-custody v0.3.0 base_url=<host>
 
-OPENWEALTH_TRADING_BASE_URL=https://... OPENWEALTH_BEARER_TOKEN=<jwt> \
+OPENWEALTH_TRADING_BASE_URL=<host> OPENWEALTH_BEARER_TOKEN=<jwt> \
   openwealth-trading-mcp --check
-# prints: OK openwealth-trading v0.3.0 base_url=https://...
+# prints: OK openwealth-trading v0.3.0 base_url=<host>
 
-OPENWEALTH_CUSTOMER_MANAGEMENT_BASE_URL=https://... OPENWEALTH_BEARER_TOKEN=<jwt> \
+OPENWEALTH_CUSTOMER_MANAGEMENT_BASE_URL=<host> OPENWEALTH_BEARER_TOKEN=<jwt> \
   openwealth-customer-mcp --check
-# prints: OK openwealth-customer v0.3.0 base_url=https://...
+# prints: OK openwealth-customer v0.3.0 base_url=<host>
 ```

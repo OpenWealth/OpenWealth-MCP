@@ -58,21 +58,21 @@ Configure **each server separately** — each needs its own base URL and token.
     "openwealth-custody": {
       "command": "openwealth-custody-mcp",
       "env": {
-        "OPENWEALTH_CUSTODY_BASE_URL": "https://api.openwealth.synpulse8.com/api/custody-services/v3",
+        "OPENWEALTH_CUSTODY_BASE_URL": "<host>",
         "OPENWEALTH_BEARER_TOKEN": "<jwt>"
       }
     },
     "openwealth-trading": {
       "command": "openwealth-trading-mcp",
       "env": {
-        "OPENWEALTH_TRADING_BASE_URL": "https://<host>/api/trading-services/v1",
+        "OPENWEALTH_TRADING_BASE_URL": "<host>",
         "OPENWEALTH_BEARER_TOKEN": "<jwt>"
       }
     },
     "openwealth-customer": {
       "command": "openwealth-customer-mcp",
       "env": {
-        "OPENWEALTH_CUSTOMER_MANAGEMENT_BASE_URL": "https://api.openwealth.synpulse8.com/api/customer-management/v2",
+        "OPENWEALTH_CUSTOMER_MANAGEMENT_BASE_URL": "<host>",
         "OPENWEALTH_BEARER_TOKEN": "<jwt>"
       }
     }
@@ -88,21 +88,21 @@ Configure **each server separately** — each needs its own base URL and token.
     "openwealth-custody": {
       "command": "openwealth-custody-mcp",
       "env": {
-        "OPENWEALTH_CUSTODY_BASE_URL": "https://api.openwealth.synpulse8.com/api/custody-services/v3",
+        "OPENWEALTH_CUSTODY_BASE_URL": "<host>",
         "OPENWEALTH_BEARER_TOKEN": "<jwt>"
       }
     },
     "openwealth-trading": {
       "command": "openwealth-trading-mcp",
       "env": {
-        "OPENWEALTH_TRADING_BASE_URL": "https://<host>/api/trading-services/v1",
+        "OPENWEALTH_TRADING_BASE_URL": "<host>",
         "OPENWEALTH_BEARER_TOKEN": "<jwt>"
       }
     },
     "openwealth-customer": {
       "command": "openwealth-customer-mcp",
       "env": {
-        "OPENWEALTH_CUSTOMER_MANAGEMENT_BASE_URL": "https://api.openwealth.synpulse8.com/api/customer-management/v2",
+        "OPENWEALTH_CUSTOMER_MANAGEMENT_BASE_URL": "<host>",
         "OPENWEALTH_BEARER_TOKEN": "<jwt>"
       }
     }
